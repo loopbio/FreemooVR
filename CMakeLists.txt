@@ -159,6 +159,9 @@ ELSE(BUILD_WITH_ROS)
   SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
   SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
+  FILE(COPY data DESTINATION ${PROJECT_BINARY_DIR})
+  FILE(COPY src/shaders DESTINATION ${PROJECT_BINARY_DIR}/src/)
+
   # the flyvr library (for building stimulus plugins) --------------------
   ADD_LIBRARY(flyvr SHARED src/ResourceLoader.cpp src/StimulusInterface.cpp src/InvalidBoundsCallback.cpp src/load_cubemap.cpp)
   TARGET_LINK_LIBRARIES(flyvr ${POCO_LIBRARIES})
@@ -191,7 +194,7 @@ ELSE(BUILD_WITH_ROS)
   )
   TARGET_LINK_LIBRARIES(display_server ${OSG_LIBS} ${PYTHON_LIBRARIES}
     ${OPENGL_LIBRARIES} ${GLUT_LIBRARY}
-    ${OPENEXR_LIBRARIES} ${POCO_LIBRARIES} ${JANSSON_LIBRARIES}
+    ${OPENEXR_LIBRARIES} ${POCO_LIBRARIES} ${POCO_NET_LIBRARY} ${JANSSON_LIBRARIES}
     ${OSG_COMPUTE_LIBRARIES} DisplaySurfaceArbitraryGeometry)
 
 ENDIF(BUILD_WITH_ROS)
