@@ -443,6 +443,17 @@ DSOSG::DSOSG(std::string flyvr_basepath, std::string mode, float observer_radius
         }
     }
 
+	// create a map from topic name to one or more stimulus plugin names
+	for (std::map<std::string, StimulusInterface*>::const_iterator i=_stimulus_plugins.begin();
+		i!=_stimulus_plugins.end(); ++i ) {
+		std::vector<std::string> topics = i->second->get_topic_names();
+		for (std::vector<std::string>::iterator j = topics.begin() ; j != topics.end(); ++j) {
+			if (_stimulus_topics.count(*j) == 0)
+				_stimulus_topics[*j] = std::vector<std::string>();
+			_stimulus_topics[*j].push_back(i->first);
+        }
+	}
+
     // but default the current stimulus to the 3D one
     if (_stimulus_plugins.count("Stimulus3DDemo")) {
         // default is demo (only if present)
@@ -743,6 +754,12 @@ std::string DSOSG::stimulus_get_message_type(const std::string& plugin_name, con
         std::cerr << "exception while calling stimulus->get_message_type(\"" << topic_name << "\")" << std::endl;
         throw; // rethrow the original exception
     }
+}
+
+void DSOSG::topic_receive_json_message(const std::string& topic_name, const std::string& json_message) {
+    std::vector<std::string> &stimulus = _stimulus_topics[topic_name];
+    for (int i=0; i<stimulus.size(); i++)
+        stimulus_receive_json_message(stimulus.at(i),topic_name,json_message);
 }
 
 void DSOSG::stimulus_receive_json_message(const std::string& plugin_name, const std::string& topic_name, const std::string& json_message) {
