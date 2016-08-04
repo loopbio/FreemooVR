@@ -176,6 +176,9 @@ ELSE(BUILD_WITH_ROS)
   ADD_LIBRARY(StimulusStandby SHARED src/StimulusStandby.cpp)
   TARGET_LINK_LIBRARIES(StimulusStandby ${OSG_LIBS} ${POCO_LIBRARIES} flyvr)
 
+  ADD_LIBRARY(StimulusOSG SHARED src/StimulusOSG.cpp)
+  TARGET_LINK_LIBRARIES(StimulusOSG ${OSG_LIBS} ${POCO_LIBRARIES} flyvr)
+
   # build the main display server node ----------
   ADD_EXECUTABLE(display_server src/main.cpp ${DS_SOURCES})
 
