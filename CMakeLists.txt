@@ -34,6 +34,8 @@ FIND_PACKAGE(jansson)
 SET(OSG_LIBS ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGVIEWER_LIBRARIES} ${OSGGA_LIBRARIES} ${OSGDB_LIBRARIES} ${OSGWIDGET_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGTEXT_LIBRARIES} ${OSGANIMATION_LIBRARIES})
 SET(EXR_LIBS ${OPENEXR_LIBRARIES})
 
+FIND_PACKAGE(PythonLibs REQUIRED)
+
 SET(DS_SOURCES
   src/dsosg.cpp
   src/WindowCaptureCallback.cpp
@@ -61,6 +63,16 @@ ADD_LIBRARY(DisplaySurfaceArbitraryGeometry SHARED src/DisplaySurfaceArbitraryGe
 TARGET_LINK_LIBRARIES(DisplaySurfaceArbitraryGeometry ${OSG_LIBS})
 
 SET(CYTHON_EXECUTABLE cython) # hack. Should use CMAKE_FIND_PROGRAM, but that ignores $PATH.
+
+# Generate .pyx -> .cpp
+ADD_CUSTOM_COMMAND(OUTPUT PyDisplaySurfaceArbitraryGeometry.cpp
+  COMMAND ${CYTHON_EXECUTABLE} --cplus -o PyDisplaySurfaceArbitraryGeometry.cpp "${CMAKE_CURRENT_SOURCE_DIR}/src/PyDisplaySurfaceArbitraryGeometry.pyx"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/PyDisplaySurfaceArbitraryGeometry.pyx")
+
+# Compile the generated .cpp
+ADD_LIBRARY(PyDisplaySurfaceArbitraryGeometry SHARED PyDisplaySurfaceArbitraryGeometry.cpp)
+TARGET_LINK_LIBRARIES(PyDisplaySurfaceArbitraryGeometry ${OSG_LIBS} DisplaySurfaceArbitraryGeometry)
+set_target_properties(PyDisplaySurfaceArbitraryGeometry PROPERTIES PREFIX "")
 
 IF(BUILD_WITH_ROS)
   MESSAGE("Building With ROS")
@@ -122,7 +134,6 @@ IF(BUILD_WITH_ROS)
   # build the main display server node ----------
   rosbuild_add_executable(display_server display_server.cpp ${DS_SOURCES})
 
-  FIND_PACKAGE(PythonLibs REQUIRED)
   INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
   INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/src")
   INCLUDE_DIRECTORIES(
@@ -168,6 +179,7 @@ ELSE(BUILD_WITH_ROS)
   # build the main display server node ----------
   ADD_EXECUTABLE(display_server src/main.cpp ${DS_SOURCES})
 
+  INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
   INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS})
   INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/src")
   INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -177,19 +189,11 @@ ELSE(BUILD_WITH_ROS)
   TARGET_LINK_LIBRARIES(display_server ${OSG_LIBS} ${PYTHON_LIBRARIES}
     ${OPENGL_LIBRARIES} ${GLUT_LIBRARY}
     ${OPENEXR_LIBRARIES} ${POCO_LIBRARIES} ${JANSSON_LIBRARIES}
-    ${OSG_COMPUTE_LIBRARIES})
+    ${OSG_COMPUTE_LIBRARIES} DisplaySurfaceArbitraryGeometry)
 
 ENDIF(BUILD_WITH_ROS)
 
 # build non-ROS programs  ----------
 ADD_LIBRARY(noaffinity SHARED src/noaffinity.c)
 
-# Generate .pyx -> .cpp
-ADD_CUSTOM_COMMAND(OUTPUT PyDisplaySurfaceArbitraryGeometry.cpp
-  COMMAND ${CYTHON_EXECUTABLE} --cplus -o PyDisplaySurfaceArbitraryGeometry.cpp "${CMAKE_CURRENT_SOURCE_DIR}/src/PyDisplaySurfaceArbitraryGeometry.pyx"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/PyDisplaySurfaceArbitraryGeometry.pyx")
 
-# Compile the generated .cpp
-ADD_LIBRARY(PyDisplaySurfaceArbitraryGeometry SHARED PyDisplaySurfaceArbitraryGeometry.cpp)
-TARGET_LINK_LIBRARIES(PyDisplaySurfaceArbitraryGeometry ${OSG_LIBS} DisplaySurfaceArbitraryGeometry)
-set_target_properties(PyDisplaySurfaceArbitraryGeometry PROPERTIES PREFIX "")
